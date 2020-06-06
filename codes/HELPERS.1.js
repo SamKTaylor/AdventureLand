@@ -3,6 +3,20 @@
 
 */
 
+const moveTo = (x, y) => {
+
+    draw_line(x,y,character.x,character.y);
+
+    if(distanceFrom(x,y) > SMART_MOVE_DISTANCE){
+
+        send_cm_party({action:"smart_move", x: x, y: y});
+        smart_move({x: x, y: y});
+
+    }else{
+        move(x,y);
+    }
+}
+
 const distanceFrom = (x, y) => {
     return Math.abs(Math.sqrt(
         Math.pow(x - character.real_x, 2) + Math.pow(y - character.real_y, 2)

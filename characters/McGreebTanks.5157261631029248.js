@@ -1,44 +1,178 @@
-// Hey there!
-// This is CODE, lets you control your character with code.
-// If you don't know how to code, don't worry, It's easy.
-// Just set attack_mode to true and ENGAGE!
+log("STARTING CODE")
 
-var attack_mode=false
+const SMART_MOVE_DISTANCE = 200;
 
-setInterval(function(){
+load_code("HELPERS");
+load_code("PARTY_LEADER");
+load_code("RIP");
 
-	use_hp_or_mp();
-	loot();
+var CharState = "Combat";
+var max_attack = 400;
+var attack_mode = true;
 
-	if(!attack_mode || character.rip || is_moving(character)) return;
+function RegenSkills() {
+    if (!character.rip) {
+        if (!is_on_cooldown("regen_mp") && character.mp < character.max_mp - 100) {
+            use_skill("regen_mp");
+        } else {
+            if (!is_on_cooldown("regen_hp") && character.hp < character.max_hp - 100) {
+                use_skill("regen_hp");
+            }
+        }
+    }
+}
 
-	var target=get_targeted_monster();
-	if(!target)
-	{
-		target=get_nearest_monster({min_xp:100,max_att:120});
-		if(target) change_target(target);
-		else
-		{
-			set_message("No Monsters");
-			return;
-		}
-	}
-	
-	if(!is_in_range(target))
-	{
-		move(
-			character.x+(target.x-character.x)/2,
-			character.y+(target.y-character.y)/2
-			);
-		// Walk half the distance
-	}
-	else if(can_attack(target))
-	{
-		set_message("Attacking");
-		attack(target);
-	}
 
-},1000/4); // Loops every 1/4 seconds.
+function Get_New_Target() {
+    //Check for enemys attacking the group allready
 
-// Learn Javascript: https://www.codecademy.com/learn/introduction-to-javascript
-// Write your own CODE: https://github.com/kaansoral/adventureland
+    var highest_xp = null;
+
+    for (id in parent.entities) {
+        var current = parent.entities[id];
+        if (current.type != "monster" || !current.visible || current.dead) continue;
+
+        if (highest_xp != null) {
+            if (current.xp > highest_xp.xp) {
+                if (current.attack < max_attack) {
+                    highest_xp = current;
+                }
+            }
+        } else {
+            highest_xp = current;
+        }
+
+        if ('target' in current) {
+            var us = getPartyNameArray();
+            if (us.includes(current.target)) {
+                return current;
+            }
+        }
+    }
+
+    //non found get_nearest_monster
+    if (highest_xp != null) {
+        return highest_xp;
+    } else {
+        return get_nearest_monster();
+    }
+
+}
+
+function DoCombat() {
+
+    if (!attack_mode || character.rip || is_moving(character)) return;
+
+    var target = get_targeted_monster();
+
+    change_target(target);
+
+    if (!target) {
+        target = Get_New_Target();
+        if (target) {
+            TargetLastX = target.x;
+            TargetLastY = target.y;
+        }
+    }
+
+    if (!target) {
+        CharState = "ReturnToBattle";
+        return;
+    }
+
+    if (!is_in_range(target)) {
+        if (!is_on_cooldown("charge")) {
+            use_skill("charge");
+        }
+        moveTo(
+            target.x,
+            target.y
+        );
+    } else if (can_attack(target)) {
+        if (!is_on_cooldown("taunt")) {
+            use_skill("taunt", target);
+        }
+        attack(target);
+    }
+}
+
+
+
+//check the target of all nearby monsters, if they are targeting a party memeber set state to assist and target to that monster
+function CheckAgro() {
+
+    var us = getOtherPartyNameArray();
+    target = null;
+    for (id in parent.entities) {
+        var current = parent.entities[id];
+        if (current.type != "monster" || !current.visible || current.dead) continue;
+
+        if ('target' in current) {
+            if (us.includes(current.target)) {
+                console.log(current.target + " Needs Help!");
+                target = current;
+
+                change_target(target);
+
+                setCharState("Assist");
+            }
+
+        }
+    }
+}
+
+//Charge down the monster and taunt it of you can, the go back to combat mode.
+function DoAssist() {
+
+    if(target == null){
+        setCharState("Combat");
+        exit;
+    }
+
+    if (!is_on_cooldown("charge")) {
+        use_skill("charge");
+    }
+
+    moveTo(
+        target.x,
+        target.y
+    );
+
+    if (can_attack(target)) {
+        if (!is_on_cooldown("taunt")) {
+            use_skill("taunt", target);
+        }
+        attack(target);
+
+        setCharState("Combat");
+    }
+
+}
+
+function setCharState(state) {
+    CharState = state;
+    set_message(CharState);
+}
+
+setInterval(function () {
+
+    CheckAgro();
+    loot();
+
+    switch (CharState) {
+
+        case "Assist":
+            DoAssist();
+            break;
+
+        case "Combat":
+            DoCombat();
+            break;
+
+        default:
+            setCharState("Combat");
+    }
+
+    RegenSkills();
+
+}, 1000 / 4); // Loops every 1/4 seconds.
