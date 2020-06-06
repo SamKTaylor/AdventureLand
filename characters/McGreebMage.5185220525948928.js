@@ -1,4 +1,7 @@
-require_code("PATH_FINDER");
+load_code("PATH_FINDER");
+load_code("TEST");
+
+TEST();
 
 const TEST_LOCATIONS = [
     {"x": 614,"y": 663,"map": "main", name: "mansion enterance"},
