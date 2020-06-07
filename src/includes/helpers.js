@@ -1,9 +1,8 @@
 /* REQUIRED CONSTANTS 
 
-
 */
 
-const moveTo = (x, y) => {
+export function moveTo(x, y){
 
     draw_line(x,y,character.x,character.y);
 
@@ -17,14 +16,14 @@ const moveTo = (x, y) => {
     }
 }
 
-const distanceFrom = (x, y) => {
+export function distanceFrom(x, y){
     return Math.abs(Math.sqrt(
         Math.pow(x - character.real_x, 2) + Math.pow(y - character.real_y, 2)
     ));
 };
 
 //Return array containing names of all party members
-const getPartyNameArray = () => {
+export function getPartyNameArray(){
 
     var array = [];
 
@@ -36,7 +35,7 @@ const getPartyNameArray = () => {
 }
 
 //Return array containing names of all other party members
-const getOtherPartyNameArray = () => {
+export function getOtherPartyNameArray(){
 
     var array = [];
 
@@ -50,7 +49,7 @@ const getOtherPartyNameArray = () => {
 }
 
 //send a message to everyone in the party
-const send_cm_party = (message) => {
+export function send_cm_party(message){
 
     for (name in parent.party) {
         if (name != character.name) {
