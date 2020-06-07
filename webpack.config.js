@@ -1,9 +1,9 @@
 const path = require('path');
 
 module.exports = {
-  entry: './movement/movement.js',
+  entry: './src/healer.js',
   output: {
-    path: path.resolve(__dirname, 'codes'),
-    filename: 'PATH_FINDER.100.js',
+    path: path.resolve(__dirname, 'characters'),
+    filename: 'McGreebHeals.6235668796145664.js',
   },
 };
